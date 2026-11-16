@@ -673,9 +673,9 @@ body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--in
 header{padding:10px 14px;border-bottom:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;background:var(--panel)}
 header h1{font-size:16px;margin:0}
 header p{margin:0;color:var(--muted);font-size:12.5px;flex:1 1 300px}
-.tools{display:flex;gap:6px;align-items:center;margin-left:auto}
-form{display:flex;gap:6px}
-input{font:inherit;padding:6px 8px;border:1px solid var(--rule);border-radius:5px;width:190px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto;min-width:0;max-width:100%}
+form{display:flex;gap:6px;min-width:0;flex:1 1 220px}
+input{font:inherit;padding:6px 8px;border:1px solid var(--rule);border-radius:5px;width:190px;min-width:0;flex:1 1 auto}
 button{font:600 13px system-ui,sans-serif;padding:6px 10px;border:0;border-radius:5px;background:var(--ink);color:#fff;cursor:pointer}
 .lang{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
 .lang button{background:transparent;color:var(--ink);border-radius:0;padding:5px 9px;font-weight:600}
@@ -692,6 +692,20 @@ button{font:600 13px system-ui,sans-serif;padding:6px 10px;border:0;border-radiu
 .legend i{display:inline-block;width:16px;height:9px;margin-right:6px;vertical-align:middle}
 .lbl{background:transparent;border:0;box-shadow:none;font-weight:600;color:#1c2321;text-shadow:0 0 3px #fff,0 0 3px #fff}
 #share{background:transparent;color:var(--ink);border:1px solid var(--rule)}
+html,body{overflow-x:hidden}
+@media (max-width:640px){
+ header{padding:8px 10px;gap:6px}
+ header p{display:none}
+ header{position:relative}
+ header h1{padding-right:96px;font-size:15px}
+ .lang{position:absolute;top:6px;right:10px}
+ .tools{margin-left:0;width:100%}
+ input{width:auto}
+ .chips{flex-wrap:nowrap;overflow-x:auto;padding:6px 10px;scrollbar-width:none}
+ .chips::-webkit-scrollbar{display:none}
+ .chip{flex:0 0 auto}
+ .legend{font-size:11px;padding:6px 8px}
+}
 #msg{position:absolute;z-index:1000;left:50%;top:12px;transform:translateX(-50%);background:#1c2321;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;max-width:90%}
 </style>
 </head>
