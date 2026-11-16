@@ -691,6 +691,7 @@ button{font:600 13px system-ui,sans-serif;padding:6px 10px;border:0;border-radiu
 .legend{background:#fff;padding:8px 10px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.25);font-size:12px;line-height:1.7}
 .legend i{display:inline-block;width:16px;height:9px;margin-right:6px;vertical-align:middle}
 .lbl{background:transparent;border:0;box-shadow:none;font-weight:600;color:#1c2321;text-shadow:0 0 3px #fff,0 0 3px #fff}
+#share{background:transparent;color:var(--ink);border:1px solid var(--rule)}
 #msg{position:absolute;z-index:1000;left:50%;top:12px;transform:translateX(-50%);background:#1c2321;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;max-width:90%}
 </style>
 </head>
@@ -700,6 +701,7 @@ button{font:600 13px system-ui,sans-serif;padding:6px 10px;border:0;border-radiu
   <p id="sub"></p>
   <div class="tools">
     <form id="f"><input id="q" aria-label=""><button id="go"></button></form>
+    <button type="button" id="share"></button>
     <div class="lang" role="group" aria-label="Nyelv / Language">
       <button type="button" data-l="hu" aria-pressed="true">HU</button>
       <button type="button" data-l="en" aria-pressed="false">EN</button>
@@ -726,7 +728,7 @@ const T={
   split:(a,b)=>`a rendeletben: ${a} – azóta megosztva (${b})`,xxiii:'a rendelet a XXII. kerületnél sorolja fel, a nyilvántartásban a XXIII. kerületben (Soroksár) van',
   cat:{'Belterület':'Belterület','Külterület':'Külterület','Zártkert':'Zártkert'},
   none:v=>`A(z) ${v} helyrajzi számhoz nincs betöltött telekhatár.`,many:'Több találat – a térkép mindet mutatja.',
-  osm:'OpenStreetMap',carto:'CARTO Voyager (OSM-adatok)'},
+  osm:'OpenStreetMap',carto:'CARTO Voyager (OSM-adatok)',share:'Link másolása',copied:'Link kimásolva – ezt a nézetet mutatja.',copyFail:'Másold ki a címsorból: '},
  en:{h1:'MÁV 142 corridor · affected parcels',sub:'Strip drawn from Annex 1 of the draft decree · parcel outlines from the OÉNY lot lookup (16 Nov 2026)',
   q:'Lot number, e.g. 144319',go:'Find',whole:'Whole line',parcels:'parcels',
   lStrip:'Designated strip',lAxis:'Track axis',lParcels:'Parcel outlines',lTowns:'Settlements & lot lists',
@@ -735,7 +737,7 @@ const T={
   split:(a,b)=>`listed as ${a}, since split (${b})`,xxiii:'listed under District XXII in the decree; the registry has it in District XXIII (Soroksár)',
   cat:{'Belterület':'Inner area (belterület)','Külterület':'Outer area (külterület)','Zártkert':'Enclosed garden (zártkert)'},
   none:v=>`No outline loaded for lot ${v}.`,many:'Several matches – the map shows all of them.',
-  osm:'OpenStreetMap',carto:'CARTO Voyager (OSM data)'}};
+  osm:'OpenStreetMap',carto:'CARTO Voyager (OSM data)',share:'Copy link',copied:'Link copied – it opens this exact view.',copyFail:'Copy it from the address bar: '}};
 let lang='hu';try{const s=localStorage.getItem('l142lang');if(s==='en'||s==='hu')lang=s;}catch(e){}
 const t=()=>T[lang];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -769,7 +771,14 @@ for(const [name,[lat,lon]] of Object.entries(D.labels)){
 let layersCtl=null;
 const legend=L.control({position:'bottomleft'});legend.onAdd=()=>L.DomUtil.create('div','legend');legend.addTo(map);
 L.control.scale({imperial:false}).addTo(map);
-const all=L.featureGroup(D.polys.map(rs=>L.polygon(rs.map(r=>r.map(ll)))));map.fitBounds(all.getBounds(),{padding:[20,20]});
+const all=L.featureGroup(D.polys.map(rs=>L.polygon(rs.map(r=>r.map(ll)))));
+// shareable view: #zoom/lat/lon
+function readHash(){const m=location.hash.match(/^#(\d{1,2}(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);if(!m)return null;const z=+m[1],la=+m[2],lo=+m[3];return (z>=3&&z<=20&&la>45&&la<49&&lo>16&&lo<23)?{z,la,lo}:null;}
+const h0=readHash();if(h0)map.setView([h0.la,h0.lo],h0.z);else map.fitBounds(all.getBounds(),{padding:[20,20]});
+let hashLock=false;
+function writeHash(){const c=map.getCenter(),z=map.getZoom();const p=z>=15?5:z>=11?4:3;const h=`#${z}/${c.lat.toFixed(p)}/${c.lng.toFixed(p)}`;if(location.hash!==h){hashLock=true;history.replaceState(null,'',h);setTimeout(()=>hashLock=false,0);}}
+map.on('moveend',writeHash);
+window.addEventListener('hashchange',()=>{if(hashLock)return;const h=readHash();if(h)map.setView([h.la,h.lo],h.z);});
 
 // area buttons
 const chips=document.getElementById('chips');
@@ -795,7 +804,7 @@ document.getElementById('f').addEventListener('submit',e=>{e.preventDefault();se
 function applyLang(){
   const x=t();document.documentElement.lang=lang;document.title=lang==='hu'?'142-es vasútvonal nyomvonala':'Line 142 Corridor';
   document.getElementById('h1').textContent=x.h1;document.getElementById('sub').textContent=x.sub;
-  const q=document.getElementById('q');q.placeholder=x.q;q.setAttribute('aria-label',x.q);document.getElementById('go').textContent=x.go;
+  const q=document.getElementById('q');q.placeholder=x.q;q.setAttribute('aria-label',x.q);document.getElementById('go').textContent=x.go;document.getElementById('share').textContent=x.share;
   chips.setAttribute('aria-label',lang==='hu'?'Ugrás területre':'Jump to area');
   chips.querySelectorAll('.chip').forEach(b=>{if(b.dataset.k==='whole')b.textContent=x.whole;
     if(b.dataset.k==='parcels'){const tn=b.dataset.town;b.textContent=(lang==='hu'?tn.replace('Budapest ','').replace(' kerület',' ker.'):tn.replace(/^Budapest ([IVXL]+)\. kerület$/,'District $1'))+' '+x.parcels;}});
@@ -806,6 +815,8 @@ function applyLang(){
   document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===lang?'true':'false'));
   map.closePopup();
 }
+document.getElementById('share').onclick=async()=>{writeHash();const u=location.href;
+  try{await navigator.clipboard.writeText(u);note(t().copied);}catch(e){note(t().copyFail+u);}};
 document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;try{localStorage.setItem('l142lang',lang);}catch(e){}applyLang();});
 applyLang();
 </script>
